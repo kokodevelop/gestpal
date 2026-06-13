@@ -8,7 +8,7 @@
 #>
 
 Set-StrictMode -Off
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 
 # ── Couleurs helpers ────────────────────────────────────────────────────────
 function Write-Ok   ($msg) { Write-Host "  [OK] $msg"      -ForegroundColor Green  }
@@ -157,7 +157,8 @@ $GITHUB_URL = "https://github.com/kokodevelop/gestpal.git"
 if ($modeMAJ) {
     Write-Info "Mise à jour depuis GitHub…"
     Set-Location $INSTALL_DIR
-    git pull origin master 2>&1 | ForEach-Object { Write-Host "    $_" }
+    git pull origin master
+    if ($LASTEXITCODE -ne 0) { Pause-Exit "Échec du git pull. Vérifiez la connexion internet." }
     Write-Ok "Code mis à jour"
 } else {
     if (Test-Path $INSTALL_DIR) {
@@ -165,7 +166,8 @@ if ($modeMAJ) {
         Remove-Item $INSTALL_DIR -Recurse -Force
     }
     Write-Info "Clonage depuis $GITHUB_URL…"
-    git clone $GITHUB_URL $INSTALL_DIR 2>&1 | ForEach-Object { Write-Host "    $_" }
+    git clone $GITHUB_URL $INSTALL_DIR
+    if ($LASTEXITCODE -ne 0) { Pause-Exit "Échec du clonage. Vérifiez la connexion internet." }
     Write-Ok "Code téléchargé dans $INSTALL_DIR"
     Set-Location $INSTALL_DIR
 }
@@ -228,17 +230,14 @@ if (-not $modeMAJ) {
     }
 
     Write-Info "Initialisation du schéma GESTPAL…"
-    try {
-        Set-Location $INSTALL_DIR
-        node src/db/init.js 2>&1 | ForEach-Object { Write-Host "    $_" }
-        Write-Ok "Base de données initialisée"
-    } catch {
-        Pause-Exit "Erreur d'initialisation de la base : $_"
-    }
+    Set-Location $INSTALL_DIR
+    node src/db/init.js
+    if ($LASTEXITCODE -ne 0) { Pause-Exit "Erreur d'initialisation de la base MySQL. Vérifiez les paramètres." }
+    Write-Ok "Base de données initialisée"
 } else {
     Write-Info "Mise à jour du schéma (migrations)…"
     Set-Location $INSTALL_DIR
-    node src/db/init.js 2>&1 | ForEach-Object { Write-Host "    $_" }
+    node src/db/init.js
     Write-Ok "Schéma à jour"
 }
 

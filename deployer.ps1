@@ -141,8 +141,8 @@ if ($modeMAJ) {
     $APP_PORT = Read-Host "  Port HTTP            [3000]"
     if ([string]::IsNullOrWhiteSpace($APP_PORT)) { $APP_PORT = "3000" }
 
-    # Jeton interne bridge → serveur (généré aléatoirement)
-    $BRIDGE_TOK = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+    # Jeton bridge (vide par défaut — configuré via l'UI Bascule après installation)
+    $BRIDGE_TOK = ''
 }
 
 # ═══════════════════════════════════════════════════════════════════════════

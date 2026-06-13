@@ -131,8 +131,7 @@ if ($modeMAJ) {
     $DB_USER  = Read-Host "  Utilisateur MySQL    [root]"
     if ([string]::IsNullOrWhiteSpace($DB_USER)) { $DB_USER = "root" }
 
-    $DB_PASS_SEC = Read-Host "  Mot de passe MySQL" -AsSecureString
-    $DB_PASS  = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($DB_PASS_SEC))
+    $DB_PASS  = Read-Host "  Mot de passe MySQL"
 
     $DB_NAME  = Read-Host "  Nom de la base       [gestpal]"
     if ([string]::IsNullOrWhiteSpace($DB_NAME)) { $DB_NAME = "gestpal" }

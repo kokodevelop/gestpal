@@ -1,0 +1,7 @@
+node_modules/
+.env
+licence.key
+licence-*.key
+tools/gestpal-private.pem
+scale-bridge/config.json
+.claude/

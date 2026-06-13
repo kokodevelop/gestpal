@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GESTPAL — Guide Utilisateur</title>
+<style>
+  /* ── Police & reset ── */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1f2937; background: #fff; line-height: 1.55; }
+
+  /* ── Variables couleurs ── */
+  :root {
+    --bleu: #1c4e80; --bleu-fonce: #143a60; --orange: #e8871e;
+    --vert: #2e8b57; --rouge: #c0392b; --gris: #eef1f5; --bord: #cdd5df;
+  }
+
+  /* ── Couverture ── */
+  .couverture {
+    background: linear-gradient(160deg, var(--bleu) 0%, var(--bleu-fonce) 100%);
+    color: #fff; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 40px;
+    page-break-after: always;
+  }
+  .couverture .logo { font-size: 60pt; margin-bottom: 16px; }
+  .couverture h1 { font-size: 32pt; font-weight: 700; letter-spacing: 2px; }
+  .couverture h2 { font-size: 18pt; font-weight: 400; opacity: .85; margin-top: 8px; }
+  .couverture .sous { font-size: 12pt; opacity: .7; margin-top: 24px; }
+  .couverture .version { margin-top: 40px; font-size: 10pt; opacity: .6; }
+
+  /* ── Contenu ── */
+  .contenu { max-width: 780px; margin: 0 auto; padding: 20px 32px 60px; }
+
+  /* ── En-têtes ── */
+  h1 { font-size: 20pt; color: var(--bleu); border-bottom: 3px solid var(--bleu); padding-bottom: 6px; margin: 36px 0 16px; page-break-before: always; }
+  h1:first-of-type { page-break-before: avoid; }
+  h2 { font-size: 14pt; color: var(--bleu); margin: 24px 0 10px; border-left: 4px solid var(--orange); padding-left: 10px; }
+  h3 { font-size: 11pt; color: var(--bleu-fonce); margin: 18px 0 8px; font-weight: 700; }
+  p  { margin-bottom: 10px; }
+
+  /* ── Tableau des matières ── */
+  .toc { background: var(--gris); border: 1px solid var(--bord); border-radius: 8px; padding: 20px 24px; margin: 20px 0 36px; page-break-after: always; }
+  .toc h2 { border: none; padding: 0; margin-bottom: 12px; font-size: 13pt; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 5px 0; font-size: 10pt; }
+  .toc a  { color: var(--bleu); text-decoration: none; }
+
+  /* ── Boîtes info ── */
+  .info  { background: #dbe7f5; border-left: 4px solid var(--bleu); border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 12px 0; font-size: 9.5pt; }
+  .warn  { background: #fff3cd; border-left: 4px solid var(--orange); border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 12px 0; font-size: 9.5pt; }
+  .tip   { background: #d9efe2; border-left: 4px solid var(--vert);  border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 12px 0; font-size: 9.5pt; }
+  .info strong, .warn strong, .tip strong { display: block; margin-bottom: 2px; }
+
+  /* ── Étapes numérotées ── */
+  .etapes { counter-reset: step; list-style: none; padding: 0; margin: 12px 0; }
+  .etapes li { counter-increment: step; display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
+  .etapes li::before {
+    content: counter(step); min-width: 26px; height: 26px; background: var(--bleu);
+    color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 9pt; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* ── Champs / boutons ── */
+  .champ  { display: inline-block; background: #f0f4f8; border: 1px solid var(--bord); border-radius: 4px; padding: 2px 7px; font-family: Consolas, monospace; font-size: 9.5pt; color: #1c4e80; }
+  .bouton { display: inline-block; background: var(--bleu); color: #fff; border-radius: 5px; padding: 3px 10px; font-size: 9pt; font-weight: 600; }
+  .bouton.orange { background: var(--orange); }
+  .bouton.rouge  { background: var(--rouge); }
+  .bouton.vert   { background: var(--vert); }
+
+  /* ── Tableau ── */
+  table  { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 12px 0; }
+  th     { background: var(--bleu); color: #fff; padding: 7px 10px; text-align: left; }
+  td     { padding: 6px 10px; border-bottom: 1px solid var(--bord); }
+  tr:nth-child(even) td { background: var(--gris); }
+
+  /* ── Raccourcis clavier ── */
+  kbd { background: #e8ecf0; border: 1px solid #b0b8c4; border-radius: 3px; padding: 1px 5px; font-size: 9pt; font-family: Consolas, monospace; }
+
+  /* ── Pied de page ── */
+  .pied { text-align: center; font-size: 8.5pt; color: #9fb6cc; margin-top: 60px; border-top: 1px solid var(--bord); padding-top: 14px; }
+
+  /* ── Impression ── */
+  @media print {
+    body { font-size: 9.5pt; }
+    h1   { page-break-before: always; }
+    h1:first-of-type, h2, h3, .etapes li, .info, .warn, .tip { page-break-inside: avoid; }
+    .couverture { page-break-after: always; min-height: unset; height: 100vh; }
+    .toc { page-break-after: always; }
+    a    { color: inherit; text-decoration: none; }
+    .no-print { display: none; }
+  }
+
+  /* ── Barre d'impression (écran uniquement) ── */
+  .barre-impression {
+    position: fixed; top: 0; left: 0; right: 0; background: var(--bleu); color: #fff;
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; z-index: 100;
+    font-size: 13pt; font-weight: 600;
+  }
+  .barre-impression button {
+    background: var(--orange); color: #fff; border: none; border-radius: 6px;
+    padding: 7px 18px; font-size: 11pt; font-weight: 700; cursor: pointer;
+  }
+  .barre-impression a { color: #d6e2f0; font-size: 10pt; margin-left: auto; text-decoration: none; }
+  @media print { .barre-impression { display: none; } }
+  body { padding-top: 54px; }
+  @media print { body { padding-top: 0; } }
+</style>
+</head>
+<body>
+
+<div class="barre-impression no-print">
+  ⚖ GESTPAL — Guide Utilisateur
+  <button onclick="window.print()">🖨 Imprimer / Enregistrer en PDF</button>
+  <a href="/">← Retour à l'application</a>
+</div>
+
+<!-- ══════════════════════ COUVERTURE ══════════════════════ -->
+<div class="couverture">
+  <div class="logo">⚖</div>
+  <h1>GESTPAL</h1>
+  <h2>Guide Utilisateur</h2>
+  <div class="sous">Gestion des pesées palette — Indicateur RS232</div>
+  <div class="version">Version 1.0 · Juin 2026</div>
+</div>
+
+<div class="contenu">
+
+<!-- ══════════════════════ TABLE DES MATIÈRES ══════════════════════ -->
+<div class="toc">
+  <h2>📋 Table des matières</h2>
+  <ol>
+    <li><a href="#presentation">Présentation de GESTPAL</a></li>
+    <li><a href="#connexion">Connexion et navigation</a></li>
+    <li><a href="#nouvelle-pesee">Créer une nouvelle pesée</a></li>
+    <li><a href="#pesee-en-cours">Pesée en cours — Enregistrer les palettes</a></li>
+    <li><a href="#preset-cacao">Règle Export Cacao (preset 10 palettes)</a></li>
+    <li><a href="#historique">Historique des pesées</a></li>
+    <li><a href="#rapports">Rapports et impressions</a></li>
+    <li><a href="#referentiels">Référentiels (données de base)</a></li>
+    <li><a href="#bascule">Configuration de la bascule RS232</a></li>
+    <li><a href="#administration">Administration — Paramètres avancés</a></li>
+    <li><a href="#pwa">Installer GESTPAL sur le bureau (PWA)</a></li>
+    <li><a href="#depannage">Dépannage courant</a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════ 1. PRÉSENTATION ══════════════════════ -->
+<h1 id="presentation">1. Présentation de GESTPAL</h1>
+
+<p>GESTPAL est une application web de <strong>gestion des pesées palette</strong> conçue pour les sites d'export de cacao et de produits agricoles. Elle permet de :</p>
+<ul style="padding-left:20px;margin:10px 0">
+  <li>Créer et suivre des pesées (une pesée = un lot, plusieurs palettes)</li>
+  <li>Capturer les poids en temps réel depuis un indicateur de pesage RS232</li>
+  <li>Gérer automatiquement les règles métier de l'export cacao (10 palettes, 385 sacs)</li>
+  <li>Générer des rapports et tickets imprimables</li>
+  <li>Gérer les référentiels (clients, fournisseurs, transporteurs, etc.)</li>
+</ul>
+
+<div class="info">
+  <strong>ℹ Architecture</strong>
+  GESTPAL est une application serveur démarrée sur l'ordinateur de pesée. Tous les postes du réseau local peuvent y accéder via un navigateur web (Chrome ou Edge recommandés) à l'adresse <span class="champ">http://[IP-du-serveur]:3000</span>.
+</div>
+
+<h2>Niveaux d'accès</h2>
+<table>
+  <tr><th>Rôle</th><th>Droits</th></tr>
+  <tr><td><strong>ADMIN</strong></td><td>Accès complet : pesées, référentiels, rapports, configuration bascule, paramètres</td></tr>
+  <tr><td><strong>PESEUR</strong></td><td>Pesées et consultation des rapports — pas d'accès aux référentiels ni à la configuration</td></tr>
+</table>
+
+<!-- ══════════════════════ 2. CONNEXION ══════════════════════ -->
+<h1 id="connexion">2. Connexion et navigation</h1>
+
+<h2>Se connecter</h2>
+<ol class="etapes">
+  <li>Ouvrez Chrome ou Edge et saisissez l'adresse du serveur GESTPAL.</li>
+  <li>Entrez votre <strong>identifiant</strong> et votre <strong>mot de passe</strong>.</li>
+  <li>Cliquez <span class="bouton">Connexion</span>. La session reste active 12 heures.</li>
+</ol>
+
+<div class="tip">
+  <strong>💡 Compte par défaut</strong>
+  À l'installation, le compte administrateur est <span class="champ">admin</span> / <span class="champ">admin123</span>. Changez ce mot de passe dès la première utilisation via <strong>Utilisateurs → Modifier</strong>.
+</div>
+
+<h2>Barre de navigation</h2>
+<table>
+  <tr><th>Lien</th><th>Accès</th></tr>
+  <tr><td>Pesées</td><td>Historique de toutes les pesées</td></tr>
+  <tr><td>Nouvelle pesée</td><td>Créer une nouvelle pesée</td></tr>
+  <tr><td>Référentiels</td><td>Clients, fournisseurs, produits, etc.</td></tr>
+  <tr><td>Rapports</td><td>Rapports filtrés avec export CSV</td></tr>
+  <tr><td>Utilisateurs</td><td>Gestion des comptes (ADMIN)</td></tr>
+  <tr><td>🔧 Bascule</td><td>Configuration RS232 (ADMIN)</td></tr>
+  <tr><td>⚙ Paramètres</td><td>Réinitialisation base (ADMIN)</td></tr>
+</table>
+
+<p>Le badge vert en haut à droite affiche le <strong>poids en temps réel</strong> reçu de la bascule. Si le poids clignote en jaune, la mesure est instable.</p>
+
+<!-- ══════════════════════ 3. NOUVELLE PESÉE ══════════════════════ -->
+<h1 id="nouvelle-pesee">3. Créer une nouvelle pesée</h1>
+
+<p>Une pesée représente un <strong>bon de livraison ou un lot de production</strong>. Elle regroupe plusieurs palettes pesées successivement.</p>
+
+<ol class="etapes">
+  <li>Cliquez <strong>Nouvelle pesée</strong> dans la barre de navigation.</li>
+  <li>Remplissez les informations du lot (voir tableau ci-dessous).</li>
+  <li>Posez les <strong>palettes vides</strong> sur la bascule, attendez la stabilisation, puis cliquez <span class="bouton">📥 Capturer la tare</span>.</li>
+  <li>Cliquez <span class="bouton vert">▶ Démarrer la pesée</span>.</li>
+</ol>
+
+<h2>Champs du formulaire</h2>
+<table>
+  <tr><th>Champ</th><th>Description</th><th>Obligatoire</th></tr>
+  <tr><td>Produit</td><td>Nature de la marchandise pesée</td><td>✅ Oui</td></tr>
+  <tr><td>Emballage</td><td>Type de sac (jute, PP, etc.) et poids unitaire</td><td>✅ Oui</td></tr>
+  <tr><td>Site</td><td>Site de pesée</td><td>✅ Oui</td></tr>
+  <tr><td>Tare palettes</td><td>Poids des palettes vides — capturé depuis la bascule (lecture seule)</td><td>✅ Oui</td></tr>
+  <tr><td>Client</td><td>Tapez le nom : si nouveau, il sera créé automatiquement</td><td>Non</td></tr>
+  <tr><td>Fournisseur</td><td>Idem — création automatique si inconnu</td><td>Non</td></tr>
+  <tr><td>Transporteur</td><td>Idem — création automatique si inconnu</td><td>Non</td></tr>
+  <tr><td>Chauffeur / Véhicule</td><td>Texte libre — mémorisé automatiquement pour l'autocomplétion</td><td>Non</td></tr>
+  <tr><td>Nb palettes</td><td>Limite le nombre de palettes (0 = illimité)</td><td>Non</td></tr>
+  <tr><td>Max sacs</td><td>Quota total de sacs (0 = illimité)</td><td>Non</td></tr>
+</table>
+
+<div class="info">
+  <strong>ℹ Saisie à la volée</strong>
+  Les champs Client, Fournisseur et Transporteur acceptent une saisie libre. Si la valeur ne correspond à aucun référentiel connu, GESTPAL crée automatiquement une nouvelle entrée. Vous pouvez l'affiner plus tard via le menu Référentiels.
+</div>
+
+<h2>Preset Export Cacao</h2>
+<p>Si la pesée concerne un <strong>lot cacao standard à l'export</strong>, cliquez <span class="bouton orange">📦 Preset Export Cacao</span> pour préremplir automatiquement : 10 palettes, 385 sacs (9 × 40 + 1 × 25).</p>
+
+<!-- ══════════════════════ 4. PESÉE EN COURS ══════════════════════ -->
+<h1 id="pesee-en-cours">4. Pesée en cours — Enregistrer les palettes</h1>
+
+<p>Une fois la pesée démarrée, vous accédez à l'écran de pesée en temps réel.</p>
+
+<h2>Interface principale</h2>
+<p>L'écran est divisé en deux zones :</p>
+<ul style="padding-left:20px;margin:10px 0">
+  <li><strong>Gauche :</strong> Afficheur de poids (vert = stable, jaune = en mouvement) + formulaire de capture</li>
+  <li><strong>Droite :</strong> Totaux en cours (palettes, sacs, poids brut, poids net) + liste des palettes enregistrées</li>
+</ul>
+
+<h2>Enregistrer une palette</h2>
+<ol class="etapes">
+  <li>Posez la palette chargée sur la bascule.</li>
+  <li>Attendez que la valeur passe en <strong>vert STABLE</strong>.</li>
+  <li>Cliquez <span class="bouton">📥 Capturer le poids brut</span> — le poids s'inscrit dans le champ (lecture seule).</li>
+  <li>Saisissez le <strong>nombre de sacs</strong> sur la palette.</li>
+  <li>Cliquez <span class="bouton vert">✅ Enregistrer la palette</span>.</li>
+</ol>
+
+<div class="warn">
+  <strong>⚠ Champs poids en lecture seule</strong>
+  Les champs Tare palettes et Poids brut ne peuvent être remplis que par les boutons de capture bascule. Cela garantit l'intégrité des mesures.
+</div>
+
+<h2>Tuteurs de progression</h2>
+<p>Quand des quotas sont définis, les tuiles affichent le format <strong>X / Y</strong> (ex: 3 / 10 palettes). Une barre d'information sous le formulaire indique les palettes et sacs restants. La tuile passe en <strong>orange</strong> quand le quota est atteint.</p>
+
+<h2>Actions en cours de pesée</h2>
+<table>
+  <tr><th>Action</th><th>Description</th></tr>
+  <tr><td><span class="bouton orange">⏸ Interrompre</span></td><td>Suspend la pesée (camion absent, pause). On peut la reprendre.</td></tr>
+  <tr><td><span class="bouton vert">▶ Reprendre</span></td><td>Reprend une pesée interrompue.</td></tr>
+  <tr><td><span class="bouton">🖨 Ticket</span></td><td>Imprime le ticket de pesée courant (format ticket thermique).</td></tr>
+  <tr><td><span class="bouton rouge">🔒 Clôturer</span></td><td>Finalise la pesée. Plus aucune modification possible. Au moins une palette requise.</td></tr>
+  <tr><td><span class="bouton rouge">🚫 Annuler</span></td><td>Annule définitivement la pesée.</td></tr>
+</table>
+
+<h2>Supprimer une palette enregistrée</h2>
+<p>Cliquez le bouton <span class="bouton rouge">🗑</span> sur la ligne de la palette dans le tableau. La suppression n'est possible que si la pesée est EN COURS ou INTERROMPUE.</p>
+
+<!-- ══════════════════════ 5. PRESET CACAO ══════════════════════ -->
+<h1 id="preset-cacao">5. Règle Export Cacao (preset 10 palettes)</h1>
+
+<p>Le preset Export Cacao applique la règle métier standard : <strong>9 palettes de 40 sacs + 1 palette de 25 sacs = 385 sacs</strong>.</p>
+
+<div class="info">
+  <strong>ℹ Détection automatique</strong>
+  Le mode Cacao s'active quand la pesée a exactement 10 palettes et 385 sacs maximum. Le champ "Nombre de sacs" est remplacé par une tuile <strong>"SACS PROPOSÉS"</strong> qui affiche le nombre attendu pour chaque palette.
+</div>
+
+<h2>Workflow palette par palette</h2>
+<ol class="etapes">
+  <li>Capturez le poids brut de la palette.</li>
+  <li>Cliquez <span class="bouton vert">✅ Enregistrer la palette</span>. Une boîte de dialogue s'ouvre.</li>
+  <li><strong>Palettes 1 à 9 :</strong> la boîte propose <strong>40 sacs</strong>. Si c'est correct, cliquez <span class="bouton vert">✅ Confirmer 40 sacs</span>.</li>
+  <li><strong>Palette 10 :</strong> la boîte propose <strong>25 sacs</strong> (dernière palette). Confirmez.</li>
+  <li>Si le nombre de sacs est différent, cliquez <span class="bouton">✏ Saisir le nombre réel</span>, entrez la vraie quantité. Cette palette sera marquée <strong>QL</strong> (queue de lot) — fond jaune dans le tableau.</li>
+</ol>
+
+<div class="tip">
+  <strong>💡 Queue de lot</strong>
+  Une palette marquée QL indique un écart par rapport au standard. Elle est visible dans le tableau et dans les rapports pour faciliter le contrôle qualité.
+</div>
+
+<!-- ══════════════════════ 6. HISTORIQUE ══════════════════════ -->
+<h1 id="historique">6. Historique des pesées</h1>
+
+<p>Le menu <strong>Pesées</strong> affiche la liste de toutes les pesées, du plus récent au plus ancien (200 dernières).</p>
+
+<h2>Filtres</h2>
+<p>Utilisez le menu déroulant <strong>Statut</strong> pour afficher uniquement les pesées EN COURS, INTERROMPUES, TERMINÉES ou ANNULÉES.</p>
+
+<h2>Actions disponibles</h2>
+<table>
+  <tr><th>Bouton</th><th>Action</th></tr>
+  <tr><td>🔍 Ouvrir</td><td>Accède à la pesée en cours (si modifiable) ou au détail (si clôturée)</td></tr>
+  <tr><td>🖨 Imprimer</td><td>Génère le rapport PDF de cette pesée dans un nouvel onglet</td></tr>
+</table>
+
+<h2>Statuts</h2>
+<table>
+  <tr><th>Statut</th><th>Signification</th></tr>
+  <tr><td>🟢 EN COURS</td><td>Pesée active, palettes en cours d'enregistrement</td></tr>
+  <tr><td>🟠 INTERROMPUE</td><td>Pesée suspendue temporairement</td></tr>
+  <tr><td>🔵 TERMINÉE</td><td>Pesée clôturée définitivement</td></tr>
+  <tr><td>🔴 ANNULÉE</td><td>Pesée annulée — conservée pour traçabilité</td></tr>
+</table>
+
+<!-- ══════════════════════ 7. RAPPORTS ══════════════════════ -->
+<h1 id="rapports">7. Rapports et impressions</h1>
+
+<h2>Rapport global</h2>
+<ol class="etapes">
+  <li>Cliquez <strong>Rapports</strong> dans la barre de navigation.</li>
+  <li>Définissez les filtres : période, produit, client, site, statut.</li>
+  <li>Le tableau se met à jour automatiquement avec les totaux.</li>
+</ol>
+
+<h2>Actions</h2>
+<table>
+  <tr><th>Bouton</th><th>Description</th></tr>
+  <tr><td><span class="bouton">📊 Export CSV</span></td><td>Télécharge les données filtrées au format tableur (Excel, LibreOffice)</td></tr>
+  <tr><td><span class="bouton">🖨 Imprimer</span></td><td>Ouvre un rapport HTML prêt à imprimer / enregistrer en PDF (Ctrl+P)</td></tr>
+</table>
+
+<h2>Ticket palette individuel</h2>
+<p>Depuis la pesée en cours ou terminée, cliquez <span class="bouton">🖨 Ticket</span> pour obtenir un ticket de style thermique avec tous les détails : lot, client, fournisseur, palettes, poids net, tare, etc.</p>
+
+<!-- ══════════════════════ 8. RÉFÉRENTIELS ══════════════════════ -->
+<h1 id="referentiels">8. Référentiels (données de base)</h1>
+
+<p>Les référentiels contiennent les données utilisées dans les formulaires. Seuls les administrateurs peuvent les modifier.</p>
+
+<h2>Tables disponibles</h2>
+<table>
+  <tr><th>Référentiel</th><th>Contenu</th></tr>
+  <tr><td>Clients</td><td>Acheteurs, exportateurs</td></tr>
+  <tr><td>Fournisseurs</td><td>Producteurs, coopératives</td></tr>
+  <tr><td>Transporteurs</td><td>Compagnies de transport</td></tr>
+  <tr><td>Produits</td><td>Natures de marchandise (cacao, café, etc.)</td></tr>
+  <tr><td>Emballages</td><td>Types de sacs et poids unitaire de tare</td></tr>
+  <tr><td>Sites</td><td>Sites de pesée (entrepôts, usines)</td></tr>
+  <tr><td>Quarts</td><td>Équipes de travail (Matin, Soir, Nuit)</td></tr>
+  <tr><td>Chauffeurs</td><td>Conducteurs (autocomplétion)</td></tr>
+  <tr><td>Véhicules</td><td>Camions et remorques (autocomplétion)</td></tr>
+</table>
+
+<h2>Ajouter / Modifier un référentiel</h2>
+<ol class="etapes">
+  <li>Cliquez sur l'onglet du référentiel souhaité.</li>
+  <li>Cliquez <span class="bouton">➕ Ajouter</span> ou le bouton ✏ sur une ligne existante.</li>
+  <li>Remplissez le <strong>Code</strong> (court, unique) et le <strong>Libellé</strong>.</li>
+  <li>Cliquez <span class="bouton vert">Enregistrer</span>.</li>
+</ol>
+
+<div class="tip">
+  <strong>💡 Création à la volée</strong>
+  Lors d'une nouvelle pesée, si vous tapez un nom de client/fournisseur/transporteur inconnu dans le champ, GESTPAL le crée automatiquement. Vous pourrez le compléter (code, adresse, etc.) dans les Référentiels plus tard.
+</div>
+
+<!-- ══════════════════════ 9. BASCULE RS232 ══════════════════════ -->
+<h1 id="bascule">9. Configuration de la bascule RS232</h1>
+
+<p>La configuration RS232 est accessible uniquement aux administrateurs via le menu <strong>🔧 Bascule</strong>.</p>
+
+<div class="warn">
+  <strong>⚠ Redémarrage automatique</strong>
+  Après chaque enregistrement de la configuration, le pont bascule redémarre automatiquement (délai ~7 secondes). Le badge de poids se réinitialise le temps du redémarrage.
+</div>
+
+<h2>Paramètres série</h2>
+<table>
+  <tr><th>Paramètre</th><th>Description</th><th>Valeur typique</th></tr>
+  <tr><td>Port COM</td><td>Port série Windows de l'indicateur</td><td>COM3, COM4, COM6…</td></tr>
+  <tr><td>Vitesse (baud)</td><td>Vitesse de transmission</td><td>9600</td></tr>
+  <tr><td>Bits de données</td><td>Longueur mot</td><td>8</td></tr>
+  <tr><td>Parité</td><td>Bit de parité</td><td>Aucune</td></tr>
+  <tr><td>Bits de stop</td><td>Bits de stop</td><td>1</td></tr>
+</table>
+
+<h2>Paramètres de trame</h2>
+<table>
+  <tr><th>Paramètre</th><th>Description</th><th>Exemple</th></tr>
+  <tr><td>Délimiteur de fin</td><td>Caractère(s) de fin de trame</td><td><span class="champ">\r\n</span> ou <span class="champ">\r</span></td></tr>
+  <tr><td>Regex poids</td><td>Expression régulière pour extraire le poids (groupe 1 = valeur)</td><td><span class="champ">([+-]?\d+(?:[.,]\d+)?)</span></td></tr>
+  <tr><td>Marqueur stable</td><td>Texte indiquant que la mesure est stable</td><td><span class="champ">ST</span> ou <span class="champ">ww</span></td></tr>
+</table>
+
+<h2>Tester la configuration</h2>
+<p>La section <strong>Testeur de trame</strong> permet de simuler une trame reçue et de vérifier que la regex extrait correctement le poids — sans connexion physique à l'indicateur.</p>
+
+<h2>Détecter les ports disponibles</h2>
+<p>Cliquez <span class="bouton">🔍 Détecter les ports</span> pour lister automatiquement les ports COM disponibles sur le serveur.</p>
+
+<!-- ══════════════════════ 10. ADMINISTRATION ══════════════════════ -->
+<h1 id="administration">10. Administration — Paramètres avancés</h1>
+
+<p>Le menu <strong>⚙ Paramètres</strong> est réservé aux administrateurs et permet de réinitialiser la base de données.</p>
+
+<div class="warn">
+  <strong>⚠ Action irréversible</strong>
+  La réinitialisation supprime définitivement des données. Cette opération ne peut pas être annulée.
+</div>
+
+<h2>Modes de réinitialisation</h2>
+<table>
+  <tr><th>Mode</th><th>Ce qui est supprimé</th><th>Ce qui est conservé</th></tr>
+  <tr>
+    <td><strong>Pesées uniquement</strong></td>
+    <td>Toutes les pesées et lignes palette</td>
+    <td>Référentiels, utilisateurs, configuration</td>
+  </tr>
+  <tr>
+    <td><strong>Réinitialisation complète</strong></td>
+    <td>Pesées + tous les référentiels + utilisateurs (sauf admin)</td>
+    <td>Compte admin (mot de passe remis à admin123)</td>
+  </tr>
+</table>
+
+<h2>Procédure de réinitialisation</h2>
+<ol class="etapes">
+  <li>Cliquez le bouton de réinitialisation souhaité.</li>
+  <li>Une boîte de dialogue de confirmation s'ouvre.</li>
+  <li>Tapez exactement <span class="champ">REINITIALISER</span> dans le champ de confirmation.</li>
+  <li>Cliquez <span class="bouton rouge">Confirmer la réinitialisation</span>.</li>
+</ol>
+
+<h2>Gestion des utilisateurs</h2>
+<p>Via le menu <strong>Utilisateurs</strong>, l'administrateur peut :</p>
+<ul style="padding-left:20px;margin:10px 0">
+  <li>Créer des comptes peseurs</li>
+  <li>Modifier les mots de passe</li>
+  <li>Activer / désactiver des comptes</li>
+  <li>Changer les rôles (ADMIN / PESEUR)</li>
+</ul>
+
+<!-- ══════════════════════ 11. PWA ══════════════════════ -->
+<h1 id="pwa">11. Installer GESTPAL sur le bureau (PWA)</h1>
+
+<p>GESTPAL peut être installé comme une application de bureau depuis Chrome ou Edge, sans passer par un installateur.</p>
+
+<h2>Installation sur Chrome / Edge</h2>
+<ol class="etapes">
+  <li>Ouvrez GESTPAL dans Chrome ou Microsoft Edge.</li>
+  <li>Cliquez l'icône <strong>⊕</strong> ou <strong>💻 Installer</strong> dans la barre d'adresse (à droite).</li>
+  <li>Cliquez <strong>Installer</strong> dans la boîte de dialogue.</li>
+  <li>GESTPAL apparaît maintenant dans le menu Démarrer et sur le bureau.</li>
+</ol>
+
+<div class="tip">
+  <strong>💡 Avantages de l'installation PWA</strong>
+  L'application s'ouvre dans sa propre fenêtre (sans barre d'adresse navigateur), elle est accessible depuis le bureau comme n'importe quel logiciel, et un raccourci est créé automatiquement.
+</div>
+
+<div class="info">
+  <strong>ℹ Mode hors-ligne</strong>
+  GESTPAL nécessite la connexion au serveur pour fonctionner. L'installation PWA améliore l'ergonomie mais ne permet pas un fonctionnement hors-ligne.
+</div>
+
+<!-- ══════════════════════ 12. DÉPANNAGE ══════════════════════ -->
+<h1 id="depannage">12. Dépannage courant</h1>
+
+<table>
+  <tr><th>Symptôme</th><th>Cause probable</th><th>Solution</th></tr>
+  <tr>
+    <td>Badge poids bloqué à 0</td>
+    <td>Le pont bascule n'est pas démarré ou n'est pas connecté</td>
+    <td>Vérifiez que PM2 affiche <code>gestpal-bridge: online</code>. Vérifiez le câble RS232 et le port COM dans la configuration bascule.</td>
+  </tr>
+  <tr>
+    <td>Badge poids jaune permanent</td>
+    <td>L'indicateur envoie des mesures instables</td>
+    <td>Normal si la charge est en mouvement. Vérifiez le paramètre "Marqueur stable" dans la configuration bascule.</td>
+  </tr>
+  <tr>
+    <td>Poids ne s'actualise pas après sauvegarde config</td>
+    <td>Le pont bascule redémarre (délai normal ~7 s)</td>
+    <td>Attendez 10 secondes. Si le problème persiste, vérifiez les logs : <code>pm2 logs gestpal-bridge</code></td>
+  </tr>
+  <tr>
+    <td>Session expirée — redirection vers login</td>
+    <td>Session de 12 h expirée</td>
+    <td>Reconnectez-vous. Veillez à ne pas fermer l'application pendant une pesée longue.</td>
+  </tr>
+  <tr>
+    <td>Erreur "Quota palettes atteint"</td>
+    <td>Le nombre max de palettes défini est atteint</td>
+    <td>Clôturez la pesée actuelle et créez-en une nouvelle, ou augmentez le quota dans les paramètres de la pesée.</td>
+  </tr>
+  <tr>
+    <td>Erreur "Dépassement quota sacs"</td>
+    <td>Le nombre de sacs saisi dépasse le quota restant</td>
+    <td>Ajustez le nombre de sacs saisi ou clôturez et créez une nouvelle pesée.</td>
+  </tr>
+  <tr>
+    <td>Client/Fournisseur introuvable dans le menu déroulant</td>
+    <td>L'entrée n'existe pas dans les référentiels</td>
+    <td>Tapez directement le nom dans le champ : il sera créé automatiquement à la validation.</td>
+  </tr>
+  <tr>
+    <td>La page affiche "Activation GESTPAL"</td>
+    <td>Licence manquante ou expirée</td>
+    <td>Contactez votre revendeur avec le Code Machine affiché pour obtenir une nouvelle clé de licence.</td>
+  </tr>
+  <tr>
+    <td>L'application ne s'ouvre plus</td>
+    <td>Le serveur GESTPAL n'est pas démarré</td>
+    <td>Sur le serveur, exécutez <code>pm2 restart all</code> ou relancez <code>demarrer-gestpal.bat</code>.</td>
+  </tr>
+  <tr>
+    <td>Rapport CSV illisible dans Excel</td>
+    <td>Problème d'encodage ou de séparateur</td>
+    <td>Ouvrez Excel → Données → Importer depuis texte/CSV → choisissez UTF-8 et virgule comme séparateur.</td>
+  </tr>
+</table>
+
+<h2>Contacts et support</h2>
+<p>En cas de problème non résolu, contactez votre revendeur GESTPAL avec :</p>
+<ul style="padding-left:20px;margin:10px 0">
+  <li>Le <strong>Code Machine</strong> (visible dans l'écran d'activation ou dans Paramètres)</li>
+  <li>La capture d'écran de l'erreur</li>
+  <li>Les logs du serveur : <span class="champ">pm2 logs gestpal-server --lines 50</span></li>
+</ul>
+
+<div class="pied">
+  ⚖ GESTPAL — Logiciel de gestion des pesées palette · Version 1.0 · Juin 2026<br>
+  Ce document est confidentiel et destiné aux utilisateurs autorisés uniquement.
+</div>
+
+</div><!-- fin .contenu -->
+</body>
+</html>

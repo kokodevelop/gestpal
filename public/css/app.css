@@ -1,0 +1,220 @@
+/* GESTPAL — styles */
+:root {
+  --bleu: #1c4e80;
+  --bleu-fonce: #143a60;
+  --orange: #e8871e;
+  --vert: #2e8b57;
+  --rouge: #c0392b;
+  --gris-fond: #eef1f5;
+  --gris-bord: #cdd5df;
+  --texte: #1f2937;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--gris-fond);
+  color: var(--texte);
+}
+
+/* ---------- En-tête ---------- */
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--bleu);
+  color: #fff;
+  padding: 0 20px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.logo { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+#navPrincipal { display: flex; gap: 4px; flex: 1; }
+.nav-lien {
+  color: #d6e2f0;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.nav-lien:hover { background: var(--bleu-fonce); color: #fff; }
+.nav-lien.actif { background: var(--orange); color: #fff; }
+.zone-user { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.badge-poids {
+  background: #0b2740;
+  color: #6cf16c;
+  font-family: Consolas, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+  min-width: 110px;
+  text-align: right;
+}
+
+/* ---------- Contenu ---------- */
+.contenu { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+.carte {
+  background: #fff;
+  border: 1px solid var(--gris-bord);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.carte h2 { margin-top: 0; color: var(--bleu); }
+.barre-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+
+/* ---------- Boutons ---------- */
+.btn {
+  border: 1px solid var(--gris-bord);
+  background: #fff;
+  color: var(--texte);
+  padding: 9px 16px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(.96); }
+.btn-primaire { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+.btn-vert { background: var(--vert); border-color: var(--vert); color: #fff; }
+.btn-orange { background: var(--orange); border-color: var(--orange); color: #fff; }
+.btn-rouge { background: var(--rouge); border-color: var(--rouge); color: #fff; }
+.btn-petit { padding: 5px 10px; font-size: 13px; }
+.actions-liste { display: flex; gap: 4px; white-space: nowrap; }
+.btn-large { padding: 14px 22px; font-size: 17px; width: 100%; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- Formulaires ---------- */
+label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+input, select, textarea {
+  width: 100%;
+  padding: 9px 10px;
+  margin-top: 4px;
+  border: 1px solid var(--gris-bord);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+input:focus, select:focus { outline: 2px solid var(--bleu); border-color: var(--bleu); }
+input.input-bascule { background: #f0f4f8; color: #1c4e80; font-weight: 700; cursor: not-allowed; border-color: #b0c4de; }
+input.input-bascule:focus { outline: none; }
+.grille-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 18px; }
+
+/* ---------- Tableaux ---------- */
+table.liste { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.liste th, table.liste td { padding: 9px 10px; border-bottom: 1px solid var(--gris-bord); text-align: left; }
+table.liste th { background: var(--gris-fond); color: var(--bleu); position: sticky; top: 56px; }
+table.liste tr:hover td { background: #f4f8fc; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.statut { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.statut.EN_COURS { background: #d9efe2; color: var(--vert); }
+.statut.INTERROMPUE { background: #fbe9d0; color: #a05c08; }
+.statut.TERMINEE { background: #dbe7f5; color: var(--bleu); }
+.statut.ANNULEE { background: #f6dcd8; color: var(--rouge); }
+
+/* ---------- Écran de pesée ---------- */
+.ecran-pesee { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .ecran-pesee { grid-template-columns: 1fr; } }
+.afficheur {
+  background: #0b2740;
+  border-radius: 12px;
+  padding: 18px 24px;
+  text-align: center;
+}
+.afficheur .valeur {
+  font-family: Consolas, monospace;
+  font-size: 64px;
+  font-weight: 700;
+  color: #6cf16c;
+  line-height: 1.1;
+}
+.afficheur .valeur.instable { color: #f1c40f; }
+.afficheur .etat { color: #9fb6cc; font-size: 13px; margin-top: 4px; }
+.totaux-pesee { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.totaux-pesee .tuile {
+  background: var(--gris-fond);
+  border: 1px solid var(--gris-bord);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.tuile .lab { font-size: 12px; color: #5b6b7c; font-weight: 600; }
+.tuile .val { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tuile.net { background: #e3f2e9; border-color: var(--vert); }
+.tuile.net .val { color: var(--vert); }
+.tuile.tuile-alerte { background: #fff3cd; border-color: #e6a817; }
+.tuile.tuile-alerte .val { color: #b45309; }
+.quota-info { font-size: 13px; color: #5b6b7c; margin: 6px 0 4px; padding: 5px 10px; background: #f0f4f8; border-radius: 6px; border-left: 3px solid var(--bleu); }
+.quota-info.quota-complet { background: #fff3cd; border-left-color: #e6a817; color: #92400e; font-weight: 600; }
+
+/* ---------- Onglets référentiels ---------- */
+.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.onglet {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--gris-bord);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.onglet.actif { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+
+/* ---------- Login ---------- */
+.page-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu-fonce) 100%);
+}
+.carte-login {
+  background: #fff;
+  padding: 36px;
+  border-radius: 14px;
+  width: 360px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.3);
+}
+.carte-login h1 { text-align: center; color: var(--bleu); margin: 0; }
+.carte-login .sous-titre { text-align: center; color: #6b7a8c; margin: 4px 0 24px; }
+
+/* ---------- Divers ---------- */
+.message-erreur { background: #f6dcd8; color: var(--rouge); padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 14px; }
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+.toast.erreur { background: var(--rouge); }
+.toast.succes { background: var(--vert); }
+.vide { text-align: center; color: #7b8a9a; padding: 30px; }
+
+/* ---------- Queue de lot ---------- */
+tr.ligne-queue-lot td { background: #fff8e1; }
+.badge-ql { display:inline-block; background: var(--orange); color:#fff; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; margin-left:4px; vertical-align:middle; }
+
+/* ---------- Zone danger / réinitialisation ---------- */
+.zone-danger { border: 2px solid var(--rouge); border-radius: 10px; padding: 18px 20px; margin-top: 16px; background: #fff8f8; }
+.zone-danger h3 { color: var(--rouge); margin: 0 0 8px; font-size: 16px; }
+.options-reinit { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.carte-reinit { border: 1px solid #f5c6cb; border-radius: 8px; padding: 14px 16px; background: #fff; }
+.carte-reinit h4 { margin: 0 0 6px; font-size: 14px; }
+.carte-reinit p { font-size: 13px; color: #555; margin: 0 0 12px; }
+
+/* ---------- Modale de confirmation ---------- */
+.modal-fond { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal-boite { background: #fff; border-radius: 12px; padding: 28px 32px; max-width: 480px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+.modal-boite h3 { margin: 0 0 10px; color: var(--rouge); }
+.modal-boite p { font-size: 14px; margin: 0 0 10px; }
+.modal-boite code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }

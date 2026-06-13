@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GESTPAL — Pesée par palette</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1c4e80">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="entete">
+    <div class="logo">⚖️ GESTPAL</div>
+    <nav id="navPrincipal">
+      <a href="#pesees" class="nav-lien">Pesées</a>
+      <a href="#nouvelle" class="nav-lien">Nouvelle pesée</a>
+      <a href="#referentiels" class="nav-lien">Référentiels</a>
+      <a href="#rapports" class="nav-lien">Rapports</a>
+      <a href="#utilisateurs" class="nav-lien nav-admin" hidden>Utilisateurs</a>
+      <a href="#bascule" class="nav-lien nav-admin" hidden>⚙ Bascule</a>
+      <a href="#parametres" class="nav-lien nav-admin" hidden>🛠 Paramètres</a>
+    </nav>
+    <div class="zone-user">
+      <span class="badge-poids" id="badgePoids" title="Poids bascule en direct">--- kg</span>
+      <span id="nomUser"></span>
+      <button class="btn btn-petit" type="button" id="btnLogout">Déconnexion</button>
+    </div>
+  </header>
+
+  <main id="contenu" class="contenu"></main>
+
+  <div id="toast" class="toast" hidden></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+</body>
+</html>

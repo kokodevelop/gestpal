@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GESTPAL — Connexion</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="page-login">
+  <form id="formLogin" class="carte-login">
+    <h1>⚖️ GESTPAL</h1>
+    <p class="sous-titre">Gestion de pesée par palette</p>
+    <label>Identifiant
+      <input type="text" id="username" autocomplete="username" required autofocus>
+    </label>
+    <label>Mot de passe
+      <input type="password" id="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn btn-primaire btn-large">Se connecter</button>
+    <div id="erreur" class="message-erreur" hidden></div>
+  </form>
+<script>
+document.getElementById('formLogin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = document.getElementById('erreur');
+  err.hidden = true;
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value
+    })
+  });
+  if (res.ok) {
+    location.href = '/index.html';
+  } else {
+    const data = await res.json().catch(() => ({}));
+    err.textContent = data.error || 'Échec de connexion';
+    err.hidden = false;
+  }
+});
+</script>
+</body>
+</html>

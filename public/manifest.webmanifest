@@ -1,0 +1,26 @@
+{
+  "name": "GESTPAL — Pesée palette",
+  "short_name": "GESTPAL",
+  "description": "Gestion des pesées de palettes sur pont bascule",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1c4e80",
+  "theme_color": "#1c4e80",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

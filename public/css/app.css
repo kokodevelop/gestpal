@@ -149,6 +149,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .tuile.tuile-alerte .val { color: #b45309; }
 .quota-info { font-size: 13px; color: #5b6b7c; margin: 6px 0 4px; padding: 5px 10px; background: #f0f4f8; border-radius: 6px; border-left: 3px solid var(--bleu); }
 .quota-info.quota-complet { background: #fff3cd; border-left-color: #e6a817; color: #92400e; font-weight: 600; }
+.case-sans-palette { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5b6b7c; margin: 10px 0 0; }
+.case-sans-palette input { width: 16px; height: 16px; }
 
 /* ---------- Onglets référentiels ---------- */
 .onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }

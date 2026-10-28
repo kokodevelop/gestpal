@@ -105,10 +105,20 @@ router.post('/', async (req, res, next) => {
     if (!b.produit_id || !b.emballage_id || !b.site_id) {
       return res.status(400).json({ error: 'Produit, emballage et site sont obligatoires' });
     }
-    const tare = Number(b.tare_palettes);
-    if (!Number.isFinite(tare) || tare <= 0) {
-      return res.status(400).json({ error: 'La tare palettes doit être un poids positif (pesez d\'abord les palettes vides)' });
+    // Certaines pesées (ex. cacao brousse) se font sans palette : les sacs sont posés
+    // directement sur la bascule. Dans ce cas la tare palettes est explicitement 0.
+    const sansPalette = !!b.sans_palette;
+    const tareSaisie = Number(b.tare_palettes);
+    if (sansPalette) {
+      if (!Number.isFinite(tareSaisie) || tareSaisie < 0) {
+        return res.status(400).json({ error: 'Tare palettes invalide' });
+      }
+    } else if (!Number.isFinite(tareSaisie) || tareSaisie <= 0) {
+      return res.status(400).json({
+        error: 'La tare palettes doit être un poids positif (pesez d\'abord les palettes vides), ou cochez "Pesée sans palette"'
+      });
     }
+    const tare = sansPalette ? 0 : tareSaisie;
     await conn.beginTransaction();
     const { numero_ticket, seq, site_code } = await prochainNumero(conn, b.site_id);
 

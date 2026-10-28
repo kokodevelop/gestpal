@@ -209,6 +209,10 @@ async function vueNouvellePesee() {
               <input type="number" step="1" min="0" id="maxSacs" placeholder="0 = illimité">
             </label>
           </div>
+          <label class="case-sans-palette">
+            <input type="checkbox" id="sansPalette">
+            Pesée sans palette (sacs posés directement sur la bascule — ex. cacao brousse)
+          </label>
           <div class="barre-actions">
             <button class="btn btn-orange btn-large" id="btnCapturerTare">📥 Capturer le poids de la bascule</button>
             <button class="btn" type="button" id="btnPresetCacao" title="11 palettes · 385 sacs max">📦 Preset Export Cacao</button>
@@ -265,6 +269,13 @@ async function vueNouvellePesee() {
     $('#tarePalettes').value = Number(poidsBascule.poids).toFixed(2);
   });
 
+  $('#sansPalette').addEventListener('change', (e) => {
+    const sans = e.target.checked;
+    $('#btnCapturerTare').disabled = sans;
+    if (sans) $('#tarePalettes').value = '0.00';
+    else $('#tarePalettes').value = '';
+  });
+
   $('#btnPresetCacao').addEventListener('click', () => {
     $('#nbPalettes').value = 10;
     $('#maxSacs').value = 385;
@@ -285,6 +296,7 @@ async function vueNouvellePesee() {
        'vehicule','remorque','chauffeur','campagne','numero_lot','numero_bordereau','provenance','destination',
        'nature_produit','n_livraison'].forEach((id) => (body[id] = $('#' + id).value));
       body.tare_palettes = $('#tarePalettes').value;
+      body.sans_palette = $('#sansPalette').checked;
       body.nb_palettes = $('#nbPalettes').value;
       body.max_sacs = $('#maxSacs').value;
       // Résoudre ou créer à la volée

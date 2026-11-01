@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -45,7 +46,12 @@ app.set('requireAuth', requireAuth);
 app.set('requireRole', requireRole);
 
 // ---------- Bascule : réception du poids depuis le pont série ----------
-let dernierPoids = { poids: 0, stable: false, recu_le: null };
+// Une entrée par bascule (1 et 2) — les entrepôts à une seule bascule (majorité des postes)
+// n'alimentent jamais l'entrée 2, qui reste à son état initial.
+let dernierPoids = {
+  1: { poids: 0, stable: false, recu_le: null },
+  2: { poids: 0, stable: false, recu_le: null }
+};
 
 app.post('/api/bascule/poids', (req, res) => {
   const token = req.headers['x-bridge-token'];
@@ -54,12 +60,29 @@ app.post('/api/bascule/poids', (req, res) => {
   }
   const poids = Number(req.body.poids);
   if (!Number.isFinite(poids)) return res.status(400).json({ error: 'Poids invalide' });
-  dernierPoids = { poids, stable: Boolean(req.body.stable), recu_le: new Date().toISOString() };
-  io.emit('poids', dernierPoids);
+  const numeroBascule = Number(req.body.numeroBascule) === 2 ? 2 : 1;
+  dernierPoids[numeroBascule] = { poids, stable: Boolean(req.body.stable), recu_le: new Date().toISOString() };
+  io.emit('poids', { numeroBascule, ...dernierPoids[numeroBascule] });
   res.json({ ok: true });
 });
 
 app.get('/api/bascule/poids', requireAuth, (req, res) => res.json(dernierPoids));
+
+// Accessible à tout utilisateur connecté (pas réservé ADMIN, contrairement à /api/bascule/config) :
+// les opérateurs doivent savoir si le sélecteur Bascule 1/2/Cumul doit s'afficher sur les écrans de
+// pesée, sans avoir les droits d'admin pour autant.
+function basculeEstActivee(numero) {
+  const fichier = numero === 2 ? 'config-bascule2.json' : 'config.json';
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '../scale-bridge', fichier), 'utf8'));
+    return raw.activee === undefined ? Boolean(raw.port) : Boolean(raw.activee);
+  } catch {
+    return false;
+  }
+}
+app.get('/api/bascule/etat', requireAuth, (req, res) => {
+  res.json({ bascule1Active: basculeEstActivee(1), bascule2Active: basculeEstActivee(2) });
+});
 
 // ---------- Licence ----------
 app.use('/api/licence', licenceRoutes);

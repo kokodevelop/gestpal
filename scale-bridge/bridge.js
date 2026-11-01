@@ -4,6 +4,7 @@
  * vers le serveur GESTPAL (POST /api/bascule/poids).
  *
  *   node bridge.js                    démarre le pont (config.json)
+ *   node bridge.js --config=config-bascule2.json   démarre un 2e pont (entrepôts à double bascule)
  *   node bridge.js --liste-ports      liste les ports COM disponibles
  *   node bridge.js --liste-ports --json   idem, sortie JSON
  *   node bridge.js --debug            affiche les trames brutes reçues (diagnostic)
@@ -13,8 +14,13 @@ const path = require('path');
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 
-const configPath = path.join(__dirname, 'config.json');
+// --config=<fichier> permet de lancer une 2e instance de ce même script (même dossier, même
+// node_modules) pointée sur un second fichier de config — pas besoin de dupliquer scale-bridge/
+// pour les entrepôts à double bascule (cacao brousse).
+const argConfig = process.argv.find((a) => a.startsWith('--config='));
+const configPath = argConfig ? path.join(__dirname, argConfig.slice('--config='.length)) : path.join(__dirname, 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const numeroBascule = Number(config.numeroBascule) === 2 ? 2 : 1;
 
 const DEBUG = process.argv.includes('--debug');
 
@@ -53,7 +59,7 @@ async function envoyer(poids, stable) {
     const res = await fetch(config.serveur + '/api/bascule/poids', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-bridge-token': config.token || '' },
-      body: JSON.stringify({ poids, stable })
+      body: JSON.stringify({ poids, stable, numeroBascule })
     });
     if (!res.ok) {
       const texte = await res.text();
@@ -97,7 +103,7 @@ function demarrer() {
       return;
     }
     const delimAff = config.delimiter || '\\r\\n';
-    console.log(`\n=== Pont bascule démarré (PID ${process.pid}) ===`);
+    console.log(`\n=== Pont bascule ${numeroBascule} démarré (PID ${process.pid}) ===`);
     console.log(`    Port    : ${config.port} @ ${config.baudRate} bauds`);
     console.log(`    Délimit : "${delimAff}"  Regex : /${config.regexPoids}/`);
     console.log(`    Serveur : ${config.serveur}`);

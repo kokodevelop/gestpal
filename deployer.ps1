@@ -251,17 +251,22 @@ Set-Location $INSTALL_DIR
 # Arrêter les instances existantes si mise à jour
 pm2 delete gestpal-server 2>$null | Out-Null
 pm2 delete gestpal-bridge 2>$null | Out-Null
+pm2 delete gestpal-bridge-2 2>$null | Out-Null
 
 Write-Info "Démarrage de GESTPAL…"
+# ecosystem.config.js ajoute automatiquement gestpal-bridge-2 si scale-bridge/config-bascule2.json
+# existe déjà (poste à double bascule, cf. GUIDE_INSTALLATION_PROD.md §5bis) — rien à faire ici.
 pm2 start ecosystem.config.js 2>&1 | Out-Null
 Start-Sleep -Seconds 3
 
 $pm2Status = pm2 jlist 2>$null | ConvertFrom-Json -ErrorAction SilentlyContinue
-$serverOk = $pm2Status | Where-Object { $_.name -eq 'gestpal-server' -and $_.pm2_env.status -eq 'online' }
+$serverOk  = $pm2Status | Where-Object { $_.name -eq 'gestpal-server' -and $_.pm2_env.status -eq 'online' }
 $bridgeOk  = $pm2Status | Where-Object { $_.name -eq 'gestpal-bridge' }
+$bridge2Ok = $pm2Status | Where-Object { $_.name -eq 'gestpal-bridge-2' }
 
 if ($serverOk) { Write-Ok "gestpal-server : en ligne" } else { Write-Warn "gestpal-server : vérifiez avec 'pm2 logs gestpal-server'" }
 if ($bridgeOk)  { Write-Ok "gestpal-bridge : démarré (port RS232 à configurer)" } else { Write-Warn "gestpal-bridge : non démarré" }
+if ($bridge2Ok) { Write-Ok "gestpal-bridge-2 : démarré (poste à double bascule détecté)" }
 
 Write-Info "Sauvegarde de la configuration PM2…"
 pm2 save 2>&1 | Out-Null
@@ -316,8 +321,10 @@ if ($ouvrir -eq 'O' -or $ouvrir -eq 'o') {
 
 Write-Host ""
 Write-Host "  Commandes utiles :" -ForegroundColor Cyan
-Write-Host "   pm2 status              — état des services"
-Write-Host "   pm2 logs gestpal-server — journaux serveur"
-Write-Host "   pm2 logs gestpal-bridge — journaux bascule RS232"
-Write-Host "   pm2 restart all         — redémarrer tout"
+Write-Host "   pm2 status                — état des services"
+Write-Host "   pm2 logs gestpal-server   — journaux serveur"
+Write-Host "   pm2 logs gestpal-bridge   — journaux bascule RS232 (Bascule 1)"
+Write-Host "   pm2 restart all           — redémarrer tout"
+Write-Host "   Double bascule (ex. cacao brousse) : activez la Bascule 2 dans Admin > Bascule,"
+Write-Host "   puis 'pm2 start ecosystem.config.js --only gestpal-bridge-2' (cf. guide §5bis)."
 Write-Host ""

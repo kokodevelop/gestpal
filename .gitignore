@@ -4,4 +4,5 @@ licence.key
 licence-*.key
 tools/gestpal-private.pem
 scale-bridge/config.json
+scale-bridge/config-bascule2.json
 .claude/

@@ -4,11 +4,15 @@
  * directement au serveur GESTPAL (sans port série).
  *
  *   node simulateur.js
+ *   node simulateur.js --config=config-bascule2.json   simule la 2e bascule (double bascule)
  */
 const fs = require('fs');
 const path = require('path');
 
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+const argConfig = process.argv.find((a) => a.startsWith('--config='));
+const configPath = argConfig ? path.join(__dirname, argConfig.slice('--config='.length)) : path.join(__dirname, 'config.json');
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const numeroBascule = Number(config.numeroBascule) === 2 ? 2 : 1;
 
 let cible = 947; // poids visé (kg)
 let poids = 0;
@@ -30,10 +34,10 @@ setInterval(() => {
   fetch(config.serveur + '/api/bascule/poids', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-bridge-token': config.token },
-    body: JSON.stringify({ poids, stable })
+    body: JSON.stringify({ poids, stable, numeroBascule })
   }).catch((e) => console.error('Serveur injoignable :', e.message));
 
-  process.stdout.write(`\rSimulateur : ${poids.toFixed(2).padStart(9)} kg ${stable ? '[STABLE]   ' : '[mouvement]'}`);
+  process.stdout.write(`\rSimulateur bascule ${numeroBascule} : ${poids.toFixed(2).padStart(9)} kg ${stable ? '[STABLE]   ' : '[mouvement]'}`);
 }, 400);
 
-console.log('Simulateur de bascule démarré →', config.serveur, '(Ctrl+C pour arrêter)');
+console.log(`Simulateur de bascule ${numeroBascule} démarré →`, config.serveur, '(Ctrl+C pour arrêter)');

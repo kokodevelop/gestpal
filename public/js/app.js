@@ -4,7 +4,14 @@
 const $ = (sel, el = document) => el.querySelector(sel);
 const contenu = $('#contenu');
 let utilisateur = null;
-let poidsBascule = { poids: 0, stable: false, recu_le: null };
+let poidsBascule1 = { poids: 0, stable: false, recu_le: null };
+let poidsBascule2 = { poids: 0, stable: false, recu_le: null };
+// Choix opérateur de la source de capture quand les deux bascules sont actives (entrepôts cacao
+// brousse à double bascule) : 'B1', 'B2' ou 'Cumul' (somme des deux). Sans effet sinon (B1 utilisée).
+let sourceBascule = 'B1';
+// Recalculé par rafraichirEtatBascules() à chaque entrée sur un écran de capture (Nouvelle pesée /
+// Pesée en cours) — reflète une éventuelle activation de la Bascule 2 faite entre-temps dans Admin.
+let deuxBasculesActives = false;
 const REF_CACHE = {};
 
 // ---------- Utilitaires ----------
@@ -49,34 +56,79 @@ function optionsRef(liste, valeur, vide = '— choisir —') {
 // ---------- Bascule temps réel ----------
 const socket = io();
 socket.on('poids', (p) => {
-  poidsBascule = p;
+  if (Number(p.numeroBascule) === 2) poidsBascule2 = p;
+  else poidsBascule1 = p;
   majAffichagePoids();
 });
+
+// Poids à capturer selon la source choisie par l'opérateur (Nothing/0 tant que la ou les bascule(s)
+// concernée(s) n'ont rien transmis — même logique que CaptureBasculeViewModel côté WPF).
+function poidsCapture() {
+  if (!deuxBasculesActives) return poidsBascule1.poids;
+  if (sourceBascule === 'B2') return poidsBascule2.poids;
+  if (sourceBascule === 'Cumul') return Number(poidsBascule1.poids || 0) + Number(poidsBascule2.poids || 0);
+  return poidsBascule1.poids;
+}
+
+// Interroge le serveur pour savoir si les 2 bascules sont activées sur ce poste — à appeler à
+// chaque entrée sur un écran de capture (config modifiable entre-temps dans Admin).
+async function rafraichirEtatBascules() {
+  try {
+    const r = await api('/api/bascule/etat');
+    deuxBasculesActives = Boolean(r.bascule1Active && r.bascule2Active);
+  } catch { deuxBasculesActives = false; }
+}
+
+function majUnAfficheur(idValeur, idEtat, p) {
+  const aff = $('#' + idValeur);
+  if (!aff) return;
+  aff.textContent = fmtKg(p.poids);
+  aff.classList.toggle('instable', !p.stable);
+  const etat = $('#' + idEtat);
+  if (etat) {
+    etat.textContent = p.recu_le
+      ? (p.stable ? 'STABLE' : 'EN MOUVEMENT') + ' — reçu à ' + new Date(p.recu_le).toLocaleTimeString('fr-FR')
+      : 'Aucune donnée bascule — saisie manuelle possible';
+  }
+}
 
 function majAffichagePoids() {
   const badge = $('#badgePoids');
   if (badge) {
-    badge.textContent = fmtKg(poidsBascule.poids) + ' kg';
-    badge.style.color = poidsBascule.stable ? '#6cf16c' : '#f1c40f';
+    badge.textContent = fmtKg(poidsBascule1.poids) + ' kg';
+    badge.style.color = poidsBascule1.stable ? '#6cf16c' : '#f1c40f';
   }
-  const aff = $('#afficheurValeur');
-  if (aff) {
-    aff.textContent = fmtKg(poidsBascule.poids);
-    aff.classList.toggle('instable', !poidsBascule.stable);
-    const etat = $('#afficheurEtat');
-    if (etat) {
-      etat.textContent = poidsBascule.recu_le
-        ? (poidsBascule.stable ? 'STABLE' : 'EN MOUVEMENT') + ' — reçu à ' + new Date(poidsBascule.recu_le).toLocaleTimeString('fr-FR')
-        : 'Aucune donnée bascule — saisie manuelle possible';
-    }
-  }
+  majUnAfficheur('afficheurValeur', 'afficheurEtat', poidsBascule1);
+  if (deuxBasculesActives) majUnAfficheur('afficheurValeur2', 'afficheurEtat2', poidsBascule2);
 }
 
+// Bascule 2 + sélecteur de source affichés seulement si deuxBasculesActives (sinon écran identique
+// à aujourd'hui — un seul afficheur, pas de sélecteur).
 const blocAfficheur = () => `
   <div class="afficheur">
-    <div class="valeur" id="afficheurValeur">${fmtKg(poidsBascule.poids)}</div>
+    ${deuxBasculesActives ? '<div class="label-bascule">Bascule 1</div>' : ''}
+    <div class="valeur" id="afficheurValeur">${fmtKg(poidsBascule1.poids)}</div>
     <div class="etat" id="afficheurEtat">kg</div>
-  </div>`;
+  </div>
+  ${deuxBasculesActives ? `
+  <div class="afficheur" style="margin-top:8px">
+    <div class="label-bascule">Bascule 2</div>
+    <div class="valeur" id="afficheurValeur2">${fmtKg(poidsBascule2.poids)}</div>
+    <div class="etat" id="afficheurEtat2">kg</div>
+  </div>
+  <div class="selecteur-bascule">
+    <label><input type="radio" name="sourceBascule" value="B1" ${sourceBascule === 'B1' ? 'checked' : ''}> Bascule 1</label>
+    <label><input type="radio" name="sourceBascule" value="B2" ${sourceBascule === 'B2' ? 'checked' : ''}> Bascule 2</label>
+    <label><input type="radio" name="sourceBascule" value="Cumul" ${sourceBascule === 'Cumul' ? 'checked' : ''}> Cumul (B1+B2)</label>
+  </div>` : ''}`;
+
+// Câble les boutons radio du sélecteur de source — à appeler après insertion de blocAfficheur()
+// dans le DOM (sans effet s'ils ne sont pas présents, càd une seule bascule active).
+function cablerSelecteurBascule() {
+  document.querySelectorAll('input[name="sourceBascule"]').forEach((r) =>
+    r.addEventListener('change', (e) => { sourceBascule = e.target.value; })
+  );
+}
 
 // ---------- Routage ----------
 const routes = {
@@ -187,6 +239,7 @@ async function resoudreOuCreerRef(table, valeur, refs) {
 
 // ---------- Vue : nouvelle pesée (étape 1 : infos + tare palettes) ----------
 async function vueNouvellePesee() {
+  await rafraichirEtatBascules();
   const [produits, emballages, clients, fournisseurs, transporteurs, vehicules, chauffeurs, sites, quarts] =
     await Promise.all(['produits', 'emballages', 'clients', 'fournisseurs', 'transporteurs', 'vehicules', 'chauffeurs', 'sites', 'quarts'].map((t) => chargerRef(t, true)));
 
@@ -264,9 +317,10 @@ async function vueNouvellePesee() {
     </div>`;
 
   majAffichagePoids();
+  cablerSelecteurBascule();
   $('#btnCapturerTare').addEventListener('click', (e) => {
     e.preventDefault();
-    $('#tarePalettes').value = Number(poidsBascule.poids).toFixed(2);
+    $('#tarePalettes').value = Number(poidsCapture()).toFixed(2);
   });
 
   $('#sansPalette').addEventListener('change', (e) => {
@@ -325,6 +379,7 @@ async function vueNouvellePesee() {
 
 // ---------- Vue : pesée en cours (étape 2 : palettes successives) ----------
 async function vuePeseeDetail(id) {
+  await rafraichirEtatBascules();
   const p = await api('/api/pesees/' + id);
   const enCours = p.statut === 'EN_COURS';
   const modifiable = enCours || p.statut === 'INTERROMPUE';
@@ -414,6 +469,7 @@ async function vuePeseeDetail(id) {
     </div>` : ''}`;
 
   majAffichagePoids();
+  cablerSelecteurBascule();
 
   function lignesHtml(p) {
     const modif = p.statut === 'EN_COURS' || p.statut === 'INTERROMPUE';
@@ -448,7 +504,7 @@ async function vuePeseeDetail(id) {
   }
 
   $('#btnLireBascule')?.addEventListener('click', () => {
-    $('#poidsBrut').value = Number(poidsBascule.poids).toFixed(2);
+    $('#poidsBrut').value = Number(poidsCapture()).toFixed(2);
     if (!PRESET_CACAO) $('#nbEmb')?.focus();
   });
 
@@ -784,52 +840,74 @@ async function vueConfigBascule() {
     contenu.innerHTML = '<div class="carte"><div class="message-erreur">Réservé à l\'administrateur</div></div>';
     return;
   }
-  const cfg = await api('/api/bascule/config');
+  const [cfg1, cfg2] = await Promise.all([api('/api/bascule/config/1'), api('/api/bascule/config/2')]);
 
   contenu.innerHTML = `
     <div class="carte">
       <h2>⚙ Configuration de la bascule</h2>
-      <p>Paramètres de communication avec l'indicateur de pesage. Compatible avec tout indicateur transmettant en continu ou sur demande par port série.</p>
+      <p>Paramètres de communication avec l'indicateur de pesage. Compatible avec tout indicateur transmettant en continu ou sur demande par port série. Activez la Bascule 2 pour les entrepôts à <b>double bascule</b> (ex. cacao brousse) : l'opérateur pourra alors choisir Bascule 1, Bascule 2, ou leur cumul comme source du poids brut.</p>
+      ${blocFormulaireBascule(1, cfg1)}
+      ${blocFormulaireBascule(2, cfg2)}
+    </div>`;
 
-      <h3 style="margin:20px 0 8px">Connexion série</h3>
+  cablerFormulaireBascule(1, cfg1);
+  cablerFormulaireBascule(2, cfg2);
+}
+
+// Formulaire de config d'UNE bascule (1 ou 2) — ids suffixés par le numéro pour coexister sur la
+// même page. Bascule 2 n'a pas d'attribut "required" HTML natif : elle peut légitimement rester
+// vide/inactive, la validation (port+regex obligatoires) ne s'applique que si "Activée" est coché
+// (cf. cablerFormulaireBascule et la même règle côté serveur, src/routes/bascule-config.js).
+function blocFormulaireBascule(numero, cfg) {
+  const s = numero;
+  return `
+    <div style="margin-top:${numero === 1 ? '4' : '22'}px;border:1px solid #333;border-radius:8px;padding:16px">
+      <h3 style="margin:0 0 12px;display:flex;align-items:center;gap:14px">
+        Bascule ${numero}
+        <label style="font-size:14px;font-weight:normal;display:inline-flex;align-items:center;gap:6px">
+          <input type="checkbox" id="cfg_activee_${s}" ${cfg.activee ? 'checked' : ''}> Activée${numero === 2 ? ' (entrepôts à double bascule)' : ''}
+        </label>
+      </h3>
+
+      <h4 style="margin:14px 0 8px">Connexion série</h4>
       <div class="grille-form">
         <label>Port COM *
           <div style="display:flex;gap:8px;align-items:center">
-            <input id="cfg_port" value="${esc(cfg.port || '')}" placeholder="COM3" required style="flex:1">
-            <button class="btn btn-petit" type="button" id="btnDetecterPorts">🔍 Détecter</button>
+            <input id="cfg_port_${s}" value="${esc(cfg.port || '')}" placeholder="COM3" style="flex:1">
+            <button class="btn btn-petit" type="button" id="btnDetecterPorts_${s}">🔍 Détecter</button>
           </div>
-          <div id="zonePorts" style="margin-top:6px"></div>
+          <div id="zonePorts_${s}" style="margin-top:6px"></div>
         </label>
         <label>Vitesse (bauds)
-          <select id="cfg_baudRate">
+          <select id="cfg_baudRate_${s}">
             ${[300,600,1200,2400,4800,9600,19200,38400,57600,115200].map((b) => `<option ${Number(cfg.baudRate)===b?'selected':''}>${b}</option>`).join('')}
           </select>
         </label>
         <label>Bits de données
-          <select id="cfg_dataBits">
+          <select id="cfg_dataBits_${s}">
             ${[5,6,7,8].map((b) => `<option ${Number(cfg.dataBits)===b?'selected':''}>${b}</option>`).join('')}
           </select>
         </label>
         <label>Parité
-          <select id="cfg_parity">
+          <select id="cfg_parity_${s}">
             ${['none','even','odd','mark','space'].map((p) => `<option ${cfg.parity===p?'selected':''}>${p}</option>`).join('')}
           </select>
         </label>
         <label>Bits de stop
-          <select id="cfg_stopBits">
+          <select id="cfg_stopBits_${s}">
             ${[1,1.5,2].map((b) => `<option ${Number(cfg.stopBits)===b?'selected':''}>${b}</option>`).join('')}
           </select>
         </label>
       </div>
 
-      <h3 style="margin:20px 0 8px">Protocole / Trame</h3>
+      <h4 style="margin:14px 0 8px">Protocole / Trame</h4>
       <p style="margin:0 0 8px;font-size:.9em;color:#aaa">
         L'indicateur envoie une ligne texte par la liaison série (ex&nbsp;: <code>ST +00547.30 kg</code>).
         La regex doit avoir <b>exactement un groupe capturant&nbsp;( )</b> qui retourne le poids en kg.
       </p>
       <div class="grille-form">
         <label>Délimiteur de fin de trame
-          <select id="cfg_delimiter_sel">
+          <select id="cfg_delimiter_sel_${s}">
             <option value="\\r\\n">\\r\\n — CRLF (le plus courant)</option>
             <option value="\\r">\\r — CR seul (fréquent sur anciens indicateurs)</option>
             <option value="\\n">\\n — LF seul</option>
@@ -837,70 +915,74 @@ async function vueConfigBascule() {
             <option value="custom">Personnalisé…</option>
           </select>
         </label>
-        <label id="labelDelimCustom" style="display:none">Délimiteur personnalisé
-          <input id="cfg_delimiter_custom" placeholder="ex: \\x02 ou \\r">
+        <label id="labelDelimCustom_${s}" style="display:none">Délimiteur personnalisé
+          <input id="cfg_delimiter_custom_${s}" placeholder="ex: \\x02 ou \\r">
         </label>
         <label style="grid-column:1/-1">Expression régulière (regex) *
-          <input id="cfg_regexPoids" value="${esc(cfg.regexPoids || '')}" placeholder="ex: ([+-]?\\d+(?:[.,]\\d+)?)" required>
+          <input id="cfg_regexPoids_${s}" value="${esc(cfg.regexPoids || '')}" placeholder="ex: ([+-]?\\d+(?:[.,]\\d+)?)">
         </label>
         <label>Marqueur de stabilité
-          <input id="cfg_marqueurStable" value="${esc(cfg.marqueurStable || '')}" placeholder="ex: ST  (vide = tout poids considéré stable)">
+          <input id="cfg_marqueurStable_${s}" value="${esc(cfg.marqueurStable || '')}" placeholder="ex: ST  (vide = tout poids considéré stable)">
         </label>
         <label>Intervalle d'envoi (ms)
-          <input type="number" id="cfg_intervalleEnvoiMs" value="${Number(cfg.intervalleEnvoiMs)||300}" min="100" max="5000" step="100">
+          <input type="number" id="cfg_intervalleEnvoiMs_${s}" value="${Number(cfg.intervalleEnvoiMs)||300}" min="100" max="5000" step="100">
         </label>
       </div>
 
-      <h3 style="margin:20px 0 8px">Testeur de trame</h3>
+      <h4 style="margin:14px 0 8px">Testeur de trame</h4>
       <p style="margin:0 0 8px;font-size:.9em;color:#aaa">Collez une trame brute telle qu'envoyée par l'indicateur pour vérifier que la regex extrait correctement le poids.</p>
       <div class="grille-form">
         <label style="grid-column:1/-1">Trame brute à tester
-          <input id="cfg_trameTest" placeholder='ex: ST +00547.30 kg  ou  N 0956.4 kg ST'>
+          <input id="cfg_trameTest_${s}" placeholder='ex: ST +00547.30 kg  ou  N 0956.4 kg ST'>
         </label>
       </div>
       <div class="barre-actions" style="margin-top:8px">
-        <button class="btn" type="button" id="btnTesterRegex">🔬 Tester la regex</button>
+        <button class="btn" type="button" id="btnTesterRegex_${s}">🔬 Tester la regex</button>
       </div>
-      <div id="zoneResultatTest" style="margin-top:8px;padding:10px;background:#1a1a2e;border-radius:6px;display:none"></div>
+      <div id="zoneResultatTest_${s}" style="margin-top:8px;padding:10px;background:#1a1a2e;border-radius:6px;display:none"></div>
 
-      <h3 style="margin:20px 0 8px">Connexion serveur</h3>
+      <h4 style="margin:14px 0 8px">Connexion serveur</h4>
       <div class="grille-form">
         <label>URL du serveur GESTPAL
-          <input id="cfg_serveur" value="${esc(cfg.serveur || 'http://localhost:3000')}">
+          <input id="cfg_serveur_${s}" value="${esc(cfg.serveur || 'http://localhost:3000')}">
         </label>
         <label>Token d'authentification bascule
-          <input id="cfg_token" value="${esc(cfg.token || '')}">
+          <input id="cfg_token_${s}" value="${esc(cfg.token || '')}">
         </label>
       </div>
 
-      <div class="barre-actions" style="margin-top:24px">
-        <button class="btn btn-primaire btn-large" type="button" id="btnSauvegarderConfig">💾 Enregistrer la configuration</button>
+      <div class="barre-actions" style="margin-top:20px">
+        <button class="btn btn-primaire" type="button" id="btnSauvegarderConfig_${s}">💾 Enregistrer Bascule ${numero}</button>
       </div>
-      <p style="margin-top:12px;font-size:.85em;color:#aaa">
+      ${numero === 1 ? `<p style="margin-top:12px;font-size:.85em;color:#aaa">
         ℹ️ Le pont bascule recharge automatiquement sa configuration après l'enregistrement.<br>
-        🔬 Pour voir les trames brutes envoyées par l'indicateur&nbsp;:
-        <code>node scale-bridge/bridge.js --debug</code>
-      </p>
+        🔬 Pour voir les trames brutes envoyées par l'indicateur&nbsp;: <code>node scale-bridge/bridge.js --debug</code>
+        (Bascule 2&nbsp;: <code>node scale-bridge/bridge.js --config=config-bascule2.json --debug</code>)
+      </p>` : ''}
     </div>`;
+}
+
+function cablerFormulaireBascule(numero, cfg) {
+  const s = numero;
 
   // Initialiser le select délimiteur
   const delimValeur = cfg.delimiter ?? '\\r\\n';
-  const selDel = $('#cfg_delimiter_sel');
+  const selDel = $('#cfg_delimiter_sel_' + s);
   const optionsConnues = ['\\r\\n', '\\r', '\\n', '\\x03'];
   if (optionsConnues.includes(delimValeur)) {
     selDel.value = delimValeur;
   } else {
     selDel.value = 'custom';
-    $('#cfg_delimiter_custom').value = delimValeur;
-    $('#labelDelimCustom').style.display = '';
+    $('#cfg_delimiter_custom_' + s).value = delimValeur;
+    $('#labelDelimCustom_' + s).style.display = '';
   }
   selDel.addEventListener('change', () => {
-    $('#labelDelimCustom').style.display = selDel.value === 'custom' ? '' : 'none';
+    $('#labelDelimCustom_' + s).style.display = selDel.value === 'custom' ? '' : 'none';
   });
 
   // Détecter les ports COM disponibles
-  $('#btnDetecterPorts').addEventListener('click', async () => {
-    const zone = $('#zonePorts');
+  $('#btnDetecterPorts_' + s).addEventListener('click', async () => {
+    const zone = $('#zonePorts_' + s);
     zone.innerHTML = '<span style="color:#aaa">Détection en cours…</span>';
     try {
       const ports = await api('/api/bascule/ports');
@@ -911,7 +993,7 @@ async function vueConfigBascule() {
           .map((p) => `<button class="btn btn-petit" type="button" data-port="${esc(p.path)}" style="margin:0 4px 4px 0">${esc(p.path)}${p.description ? ' — ' + esc(p.description) : ''}</button>`)
           .join('');
         zone.querySelectorAll('[data-port]').forEach((b) =>
-          b.addEventListener('click', () => { $('#cfg_port').value = b.dataset.port; })
+          b.addEventListener('click', () => { $('#cfg_port_' + s).value = b.dataset.port; })
         );
       }
     } catch (err) {
@@ -920,11 +1002,11 @@ async function vueConfigBascule() {
   });
 
   // Testeur de regex
-  $('#btnTesterRegex').addEventListener('click', () => {
-    const trame = $('#cfg_trameTest').value.trim();
-    const regexStr = $('#cfg_regexPoids').value.trim();
-    const marqueur = $('#cfg_marqueurStable').value.trim();
-    const zone = $('#zoneResultatTest');
+  $('#btnTesterRegex_' + s).addEventListener('click', () => {
+    const trame = $('#cfg_trameTest_' + s).value.trim();
+    const regexStr = $('#cfg_regexPoids_' + s).value.trim();
+    const marqueur = $('#cfg_marqueurStable_' + s).value.trim();
+    const zone = $('#zoneResultatTest_' + s);
     zone.style.display = 'block';
     if (!trame) { zone.innerHTML = '<span style="color:#f1c40f">Saisissez d\'abord une trame brute à tester.</span>'; return; }
     if (!regexStr) { zone.innerHTML = '<span style="color:#f1c40f">Saisissez d\'abord une regex.</span>'; return; }
@@ -946,34 +1028,38 @@ async function vueConfigBascule() {
   });
 
   // Enregistrer la configuration
-  $('#btnSauvegarderConfig').addEventListener('click', async () => {
-    const btn = $('#btnSauvegarderConfig');
+  $('#btnSauvegarderConfig_' + s).addEventListener('click', async () => {
+    const btn = $('#btnSauvegarderConfig_' + s);
+    const activee = $('#cfg_activee_' + s).checked;
+    if (activee && !$('#cfg_port_' + s).value.trim()) { toast(`Bascule ${s} : le port COM est obligatoire pour l'activer`, 'erreur'); return; }
+    if (activee && !$('#cfg_regexPoids_' + s).value.trim()) { toast(`Bascule ${s} : la regex poids est obligatoire pour l'activer`, 'erreur'); return; }
     btn.disabled = true;
     btn.textContent = '⏳ Enregistrement…';
     try {
-      await api('/api/bascule/config', {
+      await api('/api/bascule/config/' + s, {
         method: 'PUT',
         body: {
-          port: $('#cfg_port').value,
-          baudRate: Number($('#cfg_baudRate').value),
-          dataBits: Number($('#cfg_dataBits').value),
-          parity: $('#cfg_parity').value,
-          stopBits: Number($('#cfg_stopBits').value),
-          delimiter: $('#cfg_delimiter_sel').value === 'custom' ? $('#cfg_delimiter_custom').value : $('#cfg_delimiter_sel').value,
-          regexPoids: $('#cfg_regexPoids').value,
-          marqueurStable: $('#cfg_marqueurStable').value,
-          intervalleEnvoiMs: Number($('#cfg_intervalleEnvoiMs').value),
-          serveur: $('#cfg_serveur').value,
-          token: $('#cfg_token').value
+          activee,
+          port: $('#cfg_port_' + s).value,
+          baudRate: Number($('#cfg_baudRate_' + s).value),
+          dataBits: Number($('#cfg_dataBits_' + s).value),
+          parity: $('#cfg_parity_' + s).value,
+          stopBits: Number($('#cfg_stopBits_' + s).value),
+          delimiter: $('#cfg_delimiter_sel_' + s).value === 'custom' ? $('#cfg_delimiter_custom_' + s).value : $('#cfg_delimiter_sel_' + s).value,
+          regexPoids: $('#cfg_regexPoids_' + s).value,
+          marqueurStable: $('#cfg_marqueurStable_' + s).value,
+          intervalleEnvoiMs: Number($('#cfg_intervalleEnvoiMs_' + s).value),
+          serveur: $('#cfg_serveur_' + s).value,
+          token: $('#cfg_token_' + s).value
         }
       });
-      toast('Configuration bascule enregistrée', 'succes');
+      toast(`Configuration Bascule ${s} enregistrée`, 'succes');
       // Recharger le formulaire depuis le serveur pour confirmer les valeurs sauvegardées
       await vueConfigBascule();
     } catch (err) {
       toast(err.message, 'erreur');
       btn.disabled = false;
-      btn.textContent = '💾 Enregistrer la configuration';
+      btn.textContent = '💾 Enregistrer Bascule ' + s;
     }
   });
 }
@@ -1134,8 +1220,12 @@ async function vueActivationLicence(info) {
     utilisateur = user;
     $('#nomUser').textContent = user.nom_complet || user.username;
     if (user.role === 'ADMIN') document.querySelectorAll('.nav-admin').forEach((el) => (el.hidden = false));
-    // Dernier poids connu de la bascule
-    try { poidsBascule = await api('/api/bascule/poids'); } catch {}
+    // Dernier poids connu des bascules (1 et 2)
+    try {
+      const dp = await api('/api/bascule/poids');
+      if (dp[1]) poidsBascule1 = dp[1];
+      if (dp[2]) poidsBascule2 = dp[2];
+    } catch {}
     majAffichagePoids();
     router();
   } catch {

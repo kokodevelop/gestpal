@@ -149,9 +149,10 @@ Sur le PC **physiquement relié** à l'indicateur de pesage :
    ```
 2. **Configurer** — deux façons, au choix :
    - **Via l'interface web** (recommandé) : se connecter à GESTPAL en admin →
-     menu **Bascule** → renseigner port, vitesse, parité, regex poids,
-     marqueur de stabilité → *Enregistrer*. Le pont recharge automatiquement
-     sa configuration sans redémarrage manuel.
+     menu **Bascule** → section **Bascule 1** → cocher *Activée* → renseigner
+     port, vitesse, parité, regex poids, marqueur de stabilité →
+     *Enregistrer Bascule 1*. Le pont recharge automatiquement sa
+     configuration sans redémarrage manuel.
    - **Manuellement** : éditer `scale-bridge/config.json` (voir les
      commentaires `_xxx` dans le fichier pour le sens de chaque champ).
 3. **Jeton de sécurité (`token`)** : le champ `token` de `config.json` doit
@@ -174,6 +175,37 @@ Sur le PC **physiquement relié** à l'indicateur de pesage :
    pm2 start bridge.js --name gestpal-bridge --cwd C:\GESTPAL\scale-bridge
    pm2 save
    ```
+
+### 5bis. Double bascule (entrepôts à double bascule, ex. cacao brousse)
+
+Certains entrepôts pèsent avec **deux bascules physiques** ; l'opérateur choisit
+alors, à chaque palette, de prendre le poids de la Bascule 1, de la Bascule 2,
+ou leur **cumul** (somme des deux) comme poids brut. Rien à installer en plus
+(même `scale-bridge/`, même `node_modules`) :
+
+1. Connecter la 2e bascule sur un port COM libre (même PC, ou un second
+   convertisseur RS232/USB).
+2. Admin → menu **Bascule** → section **Bascule 2** → cocher *Activée* →
+   renseigner ses propres port/vitesse/regex (indépendants de la Bascule 1,
+   l'indicateur peut être d'un modèle différent) → *Enregistrer Bascule 2*.
+   Ceci écrit `scale-bridge/config-bascule2.json`.
+3. Démarrer le **second processus** `bridge.js`, pointé sur ce fichier.
+   `ecosystem.config.js` ajoute automatiquement `gestpal-bridge-2` dès que
+   `scale-bridge/config-bascule2.json` existe (rien à décommenter/éditer —
+   donc jamais de conflit avec un `git pull` lors d'une mise à jour) :
+   ```powershell
+   pm2 start ecosystem.config.js --only gestpal-bridge-2
+   pm2 save
+   ```
+   `--only` ne démarre que ce service, sans toucher aux deux autres déjà en cours.
+4. **Test sans matériel** des deux bascules :
+   ```powershell
+   node simulateur.js
+   node simulateur.js --config=config-bascule2.json
+   ```
+5. Dès que les deux sont activées, les écrans **Nouvelle pesée** et **Pesée en
+   cours** affichent automatiquement les deux afficheurs + un sélecteur
+   Bascule 1 / Bascule 2 / Cumul — rien d'autre à configurer côté opérateur.
 
 ---
 
@@ -241,7 +273,8 @@ La seule donnée critique à sauvegarder régulièrement est la **base MySQL**
 mysqldump -u root -p gestpal > "C:\Sauvegardes\gestpal_$(Get-Date -Format yyyyMMdd).sql"
 ```
 Pensez aussi à conserver une copie de `.env`, `licence.key` et
-`scale-bridge/config.json` (configuration propre à ce poste, pas versionnée).
+`scale-bridge/config.json` (configuration propre à ce poste, pas versionnée)
+— et `scale-bridge/config-bascule2.json` si le poste a une 2e bascule (§5bis).
 
 ---
 
@@ -256,6 +289,8 @@ Pensez aussi à conserver une copie de `.env`, `licence.key` et
 | `pm2 restart gestpal-bridge` | Redémarre juste le pont (après changement de bascule, par ex.) |
 | `node scale-bridge/bridge.js --liste-ports` | Liste les ports COM disponibles |
 | `node scale-bridge/bridge.js --debug` | Affiche les trames brutes reçues de la bascule (hors PM2, à lancer manuellement pour déboguer le regex/délimiteur) |
+| `pm2 logs gestpal-bridge-2` | Journaux du pont Bascule 2 (postes à double bascule, §5bis) |
+| `node scale-bridge/bridge.js --config=config-bascule2.json --debug` | Idem --debug, mais pour la Bascule 2 |
 
 **Problèmes fréquents :**
 - *Le poids n'arrive jamais côté app* → vérifier que `token` (config.json) et

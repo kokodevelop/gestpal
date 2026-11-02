@@ -150,3 +150,18 @@ CREATE TABLE IF NOT EXISTS pesee_lignes (
   CONSTRAINT fk_ligne_user FOREIGN KEY (pese_par) REFERENCES users(id),
   UNIQUE KEY uq_ligne_ordre (pesee_id, ordre)
 ) ENGINE=InnoDB;
+
+-- ---------- Journal d'audit (actions pesées, référentiels, admin, connexions — WPF pour l'instant) ----------
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  utilisateur_id INT NULL,
+  utilisateur_nom VARCHAR(100) NOT NULL DEFAULT '', -- copie figée du nom (reste lisible si l'utilisateur est renommé/supprimé ensuite)
+  action VARCHAR(50) NOT NULL,                      -- ex. PESEE_CREEE, PESEE_CLOTUREE, REFERENTIEL_MODIFIE, CONNEXION...
+  cible_type VARCHAR(50) NOT NULL DEFAULT '',        -- ex. pesee, produits, users
+  cible_id INT NULL,
+  details VARCHAR(255) NOT NULL DEFAULT '',
+  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_audit_user FOREIGN KEY (utilisateur_id) REFERENCES users(id),
+  INDEX idx_audit_date (cree_le),
+  INDEX idx_audit_action (action)
+) ENGINE=InnoDB;

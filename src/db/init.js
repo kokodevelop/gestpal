@@ -38,6 +38,24 @@ async function main() {
   } catch (e) {
     if (e.code !== 'ER_DUP_FIELDNAME') throw e;
   }
+  try {
+    await conn.query('ALTER TABLE produits ADD COLUMN prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT "prix de référence au kg" AFTER nature');
+    console.log('Migration : colonne produits.prix_unitaire ajoutée.');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+  }
+  try {
+    await conn.query('ALTER TABLE pesees ADD COLUMN afficher_prix TINYINT(1) NOT NULL DEFAULT 0 COMMENT "afficher le prix sur le ticket (ex. brousse)" AFTER poids_unitaire_emb');
+    console.log('Migration : colonne pesees.afficher_prix ajoutée.');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+  }
+  try {
+    await conn.query('ALTER TABLE pesees ADD COLUMN prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT "prix au kg appliqué à cette pesée" AFTER afficher_prix');
+    console.log('Migration : colonne pesees.prix_unitaire ajoutée.');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+  }
 
   await conn.query(`USE \`${process.env.DB_NAME || 'gestpal'}\``);
 

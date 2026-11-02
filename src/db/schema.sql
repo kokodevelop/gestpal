@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS produits (
   code VARCHAR(20) NOT NULL UNIQUE,
   libelle VARCHAR(100) NOT NULL,
   nature VARCHAR(100) NOT NULL DEFAULT '',
+  prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0, -- prix de référence au kg (optionnel, affiché sur le ticket si activé)
   actif TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB;
 
@@ -116,6 +117,8 @@ CREATE TABLE IF NOT EXISTS pesees (
   nb_palettes INT NOT NULL DEFAULT 0,
   max_sacs INT NOT NULL DEFAULT 0,                  -- 0 = sans limite ; >0 = nombre total de sacs maximum autorisé
   poids_unitaire_emb DECIMAL(8,3) NOT NULL DEFAULT 0, -- copie du poids unitaire emballage au moment de la pesée
+  afficher_prix TINYINT(1) NOT NULL DEFAULT 0,      -- l'opérateur affiche (ou non) le prix sur le ticket (ex. brousse)
+  prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0,   -- prix au kg réellement appliqué à cette pesée (pré-rempli depuis le produit, modifiable)
   date_debut DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   date_fin DATETIME NULL,
   observations TEXT NULL,

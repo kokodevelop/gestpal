@@ -4,6 +4,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/auth');
@@ -16,6 +17,14 @@ const licenceRoutes = require('./routes/licence');
 const checkLicence = require('./middleware/checkLicence');
 const { renderTicket } = require('./routes/ticket');
 
+// Pas de secours codé en dur : un secret de session faible/prévisible permettrait de forger des
+// cookies de session. deployer.ps1 en génère toujours un aléatoire à l'installation — si cette
+// variable manque, mieux vaut refuser de démarrer que de tourner avec un secret devinable.
+if (!process.env.SESSION_SECRET) {
+  console.error('[FATAL] SESSION_SECRET manquant dans .env — démarrage refusé (voir .env.example).');
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -24,12 +33,31 @@ app.set('io', io);
 app.use(express.json());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'gestpal',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 12 * 60 * 60 * 1000 } // 12 h (un quart de travail)
+    cookie: {
+      maxAge: 12 * 60 * 60 * 1000, // 12 h (un quart de travail)
+      httpOnly: true, // inaccessible en JS côté navigateur (protection contre le vol de cookie via XSS)
+      sameSite: 'strict', // le cookie ne part jamais vers une requête déclenchée depuis un autre site (protection CSRF)
+      // secure (cookie envoyé uniquement en HTTPS) intentionnellement pas activé : le déploiement
+      // actuel tourne en HTTP sur réseau local. À passer à true dès qu'un reverse proxy HTTPS est
+      // mis en place devant le serveur (sinon le cookie ne serait plus jamais envoyé).
+      secure: process.env.COOKIE_SECURE === 'true'
+    }
   })
 );
+
+// Limite les tentatives de connexion (protection brute-force) — 10 essais / 15 min par IP,
+// au-delà le serveur répond 429 sans même vérifier le mot de passe.
+const limiteurConnexion = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de tentatives de connexion — réessayez dans quelques minutes.' }
+});
+app.use('/api/auth/login', limiteurConnexion);
 
 // ---------- Middlewares d'authentification ----------
 function requireAuth(req, res, next) {
@@ -44,6 +72,21 @@ function requireRole(...roles) {
 }
 app.set('requireAuth', requireAuth);
 app.set('requireRole', requireRole);
+
+// Tant que l'utilisateur est connecté avec le mot de passe par défaut (cf. doitChangerMotDePasse
+// dans auth.js), bloque toute route API autre que celles nécessaires pour changer son mot de passe
+// ou se déconnecter — défense en profondeur : même si le frontend ne forçait pas l'écran de
+// changement (bug, appel direct à l'API...), le serveur refuse quand même d'exécuter quoi que ce
+// soit d'autre. Les pages/fichiers statiques restent servis normalement (sinon l'écran de
+// changement de mot de passe lui-même ne pourrait plus se charger).
+const ROUTES_AUTORISEES_SI_CHANGEMENT_REQUIS = new Set(['/api/auth/password', '/api/auth/logout', '/api/auth/me']);
+function requireMotDePasseChange(req, res, next) {
+  if (!req.session.user || !req.session.user.doitChangerMotDePasse) return next();
+  if (!req.path.startsWith('/api/')) return next();
+  if (ROUTES_AUTORISEES_SI_CHANGEMENT_REQUIS.has(req.path)) return next();
+  return res.status(403).json({ error: 'Changement de mot de passe obligatoire', doitChangerMotDePasse: true });
+}
+app.use(requireMotDePasseChange);
 
 // ---------- Bascule : réception du poids depuis le pont série ----------
 // Une entrée par bascule (1 et 2) — les entrepôts à une seule bascule (majorité des postes)

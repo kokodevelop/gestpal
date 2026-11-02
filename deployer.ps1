@@ -128,7 +128,10 @@ if ($modeMAJ) {
     $DB_PORT  = Read-Host "  Port MySQL           [3306]"
     if ([string]::IsNullOrWhiteSpace($DB_PORT)) { $DB_PORT = "3306" }
 
-    $DB_USER  = Read-Host "  Utilisateur MySQL    [root]"
+    Write-Host "  Utilisez root UNIQUEMENT pour cette installation initiale (création du schéma)." -ForegroundColor Yellow
+    Write-Host "  Après coup, exécutez securite/creer-utilisateur-app.sql et reconfigurez .env" -ForegroundColor Yellow
+    Write-Host "  avec un compte applicatif à privilèges limités — pas root au quotidien." -ForegroundColor Yellow
+    $DB_USER  = Read-Host "  Utilisateur MySQL (installation)"
     if ([string]::IsNullOrWhiteSpace($DB_USER)) { $DB_USER = "root" }
 
     $DB_PASS  = Read-Host "  Mot de passe MySQL"
@@ -305,13 +308,17 @@ Write-Host "  Accès local    : http://localhost:$APP_PORT" -ForegroundColor Whi
 Write-Host "  Accès réseau   : http://${ip}:$APP_PORT" -ForegroundColor White
 Write-Host ""
 Write-Host "  Compte admin   : admin / admin123" -ForegroundColor Yellow
-Write-Host "  !! Changez ce mot de passe à la première connexion !!" -ForegroundColor Yellow
+Write-Host "  !! Un changement de mot de passe sera exigé dès la première connexion !!" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Prochaines étapes :" -ForegroundColor Cyan
 Write-Host "   1. Ouvrez http://localhost:$APP_PORT dans Chrome ou Edge"
 Write-Host "   2. Entrez la clé de licence fournie par votre revendeur"
 Write-Host "   3. Configurez le port RS232 de la bascule (menu Bascule)"
-Write-Host "   4. Changez le mot de passe administrateur"
+Write-Host "   4. Connectez-vous (changement de mot de passe obligatoire si admin/admin123)"
+if ($DB_USER -eq 'root') {
+    Write-Host "   5. IMPORTANT : exécutez securite/creer-utilisateur-app.sql puis reconfigurez" -ForegroundColor Yellow
+    Write-Host "      DB_USER/DB_PASSWORD dans .env avec ce compte limité — pas root au quotidien" -ForegroundColor Yellow
+}
 Write-Host ""
 
 $ouvrir = Read-Host "  Ouvrir GESTPAL dans le navigateur maintenant ? (O/N)"

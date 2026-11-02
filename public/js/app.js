@@ -130,6 +130,51 @@ function cablerSelecteurBascule() {
   );
 }
 
+// ---------- Changement de mot de passe obligatoire (mot de passe par défaut) ----------
+function vueChangementMotDePasseObligatoire() {
+  contenu.innerHTML = `
+    <div class="carte" style="max-width:420px;margin:40px auto">
+      <h2 style="color:var(--bleu);margin-top:0">🔒 Changement de mot de passe obligatoire</h2>
+      <p style="font-size:14px;color:#5b6b7c">
+        Vous êtes connecté avec le mot de passe administrateur par défaut. Pour des raisons de
+        sécurité, vous devez le changer avant de continuer.
+      </p>
+      <label>Mot de passe actuel
+        <input type="password" id="mdpObligatoireActuel" autocomplete="current-password">
+      </label>
+      <label>Nouveau mot de passe (8 caractères min.)
+        <input type="password" id="mdpObligatoireNouveau" autocomplete="new-password">
+      </label>
+      <label>Confirmation
+        <input type="password" id="mdpObligatoireConfirmation" autocomplete="new-password">
+      </label>
+      <div id="errMdpObligatoire" class="message-erreur" hidden style="margin-top:10px"></div>
+      <button class="btn btn-primaire btn-large" id="btnMdpObligatoire" style="margin-top:14px">Changer le mot de passe</button>
+    </div>`;
+
+  $('#btnMdpObligatoire').addEventListener('click', async () => {
+    const ancien = $('#mdpObligatoireActuel').value;
+    const nouveau = $('#mdpObligatoireNouveau').value;
+    const confirmation = $('#mdpObligatoireConfirmation').value;
+    const zoneErr = $('#errMdpObligatoire');
+    zoneErr.hidden = true;
+    if (nouveau !== confirmation) {
+      zoneErr.textContent = 'Les deux mots de passe ne correspondent pas.';
+      zoneErr.hidden = false;
+      return;
+    }
+    try {
+      const r = await api('/api/auth/password', { method: 'POST', body: { ancien, nouveau } });
+      utilisateur = r.user;
+      toast('Mot de passe changé avec succès', 'succes');
+      router();
+    } catch (err) {
+      zoneErr.textContent = err.message;
+      zoneErr.hidden = false;
+    }
+  });
+}
+
 // ---------- Routage ----------
 const routes = {
   pesees: vuePesees,
@@ -142,6 +187,10 @@ const routes = {
 };
 
 async function router() {
+  // Changement de mot de passe obligatoire (connexion avec le mot de passe par défaut) : bloque
+  // toute navigation tant que ce n'est pas fait — re-vérifié à chaque appel de router() (chargement
+  // initial ET hashchange), donc impossible de contourner en cliquant un lien de la nav.
+  if (utilisateur && utilisateur.doitChangerMotDePasse) { vueChangementMotDePasseObligatoire(); return; }
   const hash = location.hash.replace('#', '') || 'pesees';
   const [route, param] = hash.split('/');
   document.querySelectorAll('.nav-lien').forEach((a) => a.classList.toggle('actif', a.getAttribute('href') === '#' + route));
